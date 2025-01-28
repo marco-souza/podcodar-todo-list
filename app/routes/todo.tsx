@@ -8,8 +8,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   console.log({ context });
   const todos = getTodos();
 
-  //const text = context.params.get("text") ?? "";
-  return { todos, text: "" };
+  return { todos };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -24,14 +23,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const text = formData.get("text")?.toString() ?? raise("Missing text");
-  addTodo(text);
 
-  return { text: "" };
+  if (text.length === 0) {
+    return new Response("Text cannot be empty", { status: 400 });
+  }
+
+  addTodo(text);
 }
 
 export default function TodoPage() {
-  const { todos, text } = useLoaderData<typeof loader>();
-  const actionData = useLoaderData<typeof action>();
+  const { todos } = useLoaderData<typeof loader>();
   const { state } = useNavigation();
   const isSubmitting = state === "submitting";
 
@@ -39,13 +40,12 @@ export default function TodoPage() {
     <Section>
       <h1 className="text-3xl">Todo</h1>
 
-      <Form method="post" className="join">
+      <Form method="post" className="join" reloadDocument>
         <input
           className="input join-item"
           type="text"
           name="text"
           placeholder="Enter your task here..."
-          defaultValue={actionData ? actionData.text : text}
         />
 
         <button
